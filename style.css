@@ -633,3 +633,32 @@ body {
     gap: 16px;
   }
 }
+
+/* --- Page Footer --- */
+.app-footer {
+  padding: 20px 24px;
+  text-align: center;
+  border-top: 1px solid var(--border);
+  background: var(--bg-primary);
+}
+
+.footer-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.footer-content a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color var(--transition);
+}
+
+.footer-content a:hover {
+  color: var(--text-primary);
+  text-decoration: underline;
+}
