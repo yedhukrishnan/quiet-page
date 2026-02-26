@@ -2,7 +2,7 @@
 
 **Beautiful quote screens for your e-reader.**
 
-QuietPage is a simple, open-source web app that generates quote images optimized for e-readers — output as 480×800 grayscale BMP files, ready to use as sleep/lock screens on Kindle, Kobo, and other e-ink devices.
+QuietPage is a simple, open-source web app that generates quote images optimized for e-readers — output as 480×800 grayscale BMP files, ready to use as sleep/lock screens on your tiny e-ink devices.
 
 ![QuietPage Screenshot](https://raw.githubusercontent.com/yedhukrishnan/quiet-page/main/screenshot.png)
 
@@ -23,7 +23,7 @@ QuietPage is a simple, open-source web app that generates quote images optimized
 1. Clone the repo:
    ```bash
    git clone https://github.com/yedhukrishnan/quiet-page.git
-   cd quiet-page
+   cd quote-page
    ```
 
 2. Open `index.html` in your browser — that's it! No build tools or dependencies required.
@@ -34,7 +34,7 @@ QuietPage is a simple, open-source web app that generates quote images optimized
    - Create an API key (restrict to HTTP referrers + Fonts API only)
    - Paste it into `app.js` line 10:
      ```js
-     const GOOGLE_FONTS_API_KEY = 'YOUR_KEY_HERE';
+     const GOOGLE_FONTS_API_KEY = 'REPLACE_WITH_YOUR_GOOGLE_FONTS_API_KEY';
      ```
 
 ## 🤝 Contributing
