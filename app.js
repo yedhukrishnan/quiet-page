@@ -44,6 +44,8 @@ const fontSizeValue = document.getElementById('fontSizeValue');
 const downloadBtn = document.getElementById('downloadBtn');
 const boldBtn = document.getElementById('boldBtn');
 const italicBtn = document.getElementById('italicBtn');
+const borderGroup = document.getElementById('borderGroup');
+const footerInput = document.getElementById('footerInput');
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -53,6 +55,7 @@ const offCtx = offscreenCanvas.getContext('2d');
 
 // --- State ---
 let currentAlignment = 'center';
+let currentBorder = 'none';
 let isBold = false;
 let isItalic = false;
 
@@ -161,6 +164,68 @@ function wrapText(targetCtx, text, maxWidth) {
   return lines;
 }
 
+// --- Border Drawing ---
+function drawBorder(ctx, style, width, height, padding) {
+  if (style === 'none') return;
+
+  ctx.strokeStyle = '#000000';
+  ctx.fillStyle = '#000000';
+
+  const inset = padding * 0.5;
+
+  if (style === 'simple') {
+    // Single clean line
+    ctx.lineWidth = Math.round(width * 0.004);
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+  } else if (style === 'double') {
+    // Double line with gap
+    const lineW = Math.round(width * 0.003);
+    const gap = lineW * 3;
+    ctx.lineWidth = lineW;
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+    ctx.strokeRect(inset + gap, inset + gap, width - (inset + gap) * 2, height - (inset + gap) * 2);
+  } else if (style === 'ornament') {
+    // Ornamental border: lines with corner decorations
+    const lineW = Math.round(width * 0.003);
+    const gap = lineW * 3;
+    ctx.lineWidth = lineW;
+    // Outer frame
+    ctx.strokeRect(inset, inset, width - inset * 2, height - inset * 2);
+    // Inner frame
+    ctx.strokeRect(inset + gap, inset + gap, width - (inset + gap) * 2, height - (inset + gap) * 2);
+    // Corner ornaments (small diamonds)
+    const cornerSize = gap * 2;
+    const corners = [
+      [inset, inset],
+      [width - inset, inset],
+      [inset, height - inset],
+      [width - inset, height - inset],
+    ];
+    for (const [cx, cy] of corners) {
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - cornerSize);
+      ctx.lineTo(cx + cornerSize, cy);
+      ctx.lineTo(cx, cy + cornerSize);
+      ctx.lineTo(cx - cornerSize, cy);
+      ctx.closePath();
+      ctx.fill();
+    }
+    // Mid-edge decorative dots
+    const dotR = lineW * 2;
+    const midPoints = [
+      [width / 2, inset],
+      [width / 2, height - inset],
+      [inset, height / 2],
+      [width - inset, height / 2],
+    ];
+    for (const [mx, my] of midPoints) {
+      ctx.beginPath();
+      ctx.arc(mx, my, dotR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
 // --- Canvas Rendering (with supersampling) ---
 function render() {
   const { width, height, padding, lineHeightMultiplier, supersampleScale } = OUTPUT_CONFIG;
@@ -175,6 +240,9 @@ function render() {
   offCtx.fillStyle = '#FFFFFF';
   offCtx.fillRect(0, 0, hiWidth, hiHeight);
 
+  // Draw border
+  drawBorder(offCtx, currentBorder, hiWidth, hiHeight, hiPadding);
+
   // Get settings
   const fontIndex = parseInt(fontSelect.value, 10);
   const font = FONTS[fontIndex];
@@ -186,6 +254,14 @@ function render() {
   let text = quoteInput.value;
   if (!text.trim()) {
     text = 'The only thing that you absolutely have to know, is the location of the library.\n\n— Albert Einstein';
+  }
+
+  // --- Footer ---
+  const footerText = footerInput.value.trim();
+  let footerHeight = 0;
+  const footerFontSize = Math.round(16 * S);
+  if (footerText) {
+    footerHeight = footerFontSize * 3; // space for footer line + padding
   }
 
   // Set font on offscreen context (scaled up) with bold/italic
@@ -211,12 +287,22 @@ function render() {
   const lines = wrapText(offCtx, text, hiMaxWidth);
   const totalTextHeight = lines.length * hiLineHeight;
 
-  // Vertically center
-  let yStart = Math.max(hiPadding, (hiHeight - totalTextHeight) / 2);
+  // Vertically center (account for footer space)
+  const availableHeight = hiHeight - footerHeight;
+  let yStart = Math.max(hiPadding, (availableHeight - totalTextHeight) / 2);
 
   // Draw lines on offscreen canvas
   for (let i = 0; i < lines.length; i++) {
     offCtx.fillText(lines[i], xPos, yStart + i * hiLineHeight);
+  }
+
+  // Draw footer text
+  if (footerText) {
+    offCtx.font = `normal 400 ${footerFontSize}px "Atkinson Hyperlegible", Arial, sans-serif`;
+    offCtx.textAlign = 'center';
+    offCtx.textBaseline = 'bottom';
+    offCtx.fillStyle = '#555555';
+    offCtx.fillText(footerText, hiWidth / 2, hiHeight - hiPadding * 0.6);
   }
 
   // --- Step 2: Downscale to preview canvas ---
