@@ -9,9 +9,6 @@
     content="Generate beautiful quote images optimized for e-readers. Choose from diverse fonts, customize alignment, size, and style, and download as BMP.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400;1,700&family=Caveat:wght@400;700&family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Dancing+Script:wght@400;700&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,700;1,7..72,400;1,7..72,700&family=Nunito:ital,wght@0,400;0,700;1,400;1,700&family=Playfair+Display:ital,wght@0,400;0,700;1,400;1,700&family=Raleway:ital,wght@0,400;0,700;1,400;1,700&display=swap"
-    rel="stylesheet">
   <link href="https://fonts.cdnfonts.com/css/open-dyslexic" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -37,8 +34,29 @@
       </div>
 
       <div class="control-group">
-        <label for="fontSelect" class="control-label">Font</label>
-        <select id="fontSelect" class="font-select"></select>
+        <label class="control-label">Font</label>
+        <div class="font-picker" id="fontPicker">
+          <div class="font-picker-trigger" id="fontPickerTrigger">
+            <span class="font-picker-label" id="fontPickerLabel">Literata</span>
+            <svg class="font-picker-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+          <div class="font-picker-dropdown" id="fontPickerDropdown">
+            <input type="text" class="font-picker-search" id="fontSearch" placeholder="Search 1,700+ fonts..."
+              autocomplete="off">
+            <div class="font-picker-categories" id="fontCategories">
+              <button class="cat-btn active" data-category="all">All</button>
+              <button class="cat-btn" data-category="serif">Serif</button>
+              <button class="cat-btn" data-category="sans-serif">Sans</button>
+              <button class="cat-btn" data-category="handwriting">Hand</button>
+              <button class="cat-btn" data-category="monospace">Mono</button>
+            </div>
+            <div class="font-picker-list" id="fontList"></div>
+            <div class="font-picker-status" id="fontStatus">Loading fonts…</div>
+          </div>
+        </div>
       </div>
 
       <div class="control-group">
