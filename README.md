@@ -4,8 +4,6 @@
 
 QuietPage is a simple, open-source web app that generates quote images optimized for e-readers — output as 480×800 grayscale BMP files, ready to use as sleep/lock screens on your tiny e-ink devices.
 
-![QuietPage Screenshot](https://raw.githubusercontent.com/yedhukrishnan/quiet-page/main/screenshot.png)
-
 ## ✨ Features
 
 - **1,700+ Google Fonts** — searchable picker with category filters (Serif, Sans, Handwriting, Monospace)
