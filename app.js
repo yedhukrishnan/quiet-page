@@ -87,7 +87,7 @@ function init() {
 
   // Bind events
   quoteInput.addEventListener('input', render);
-  fontSelect.addEventListener('change', render);
+  fontSelect.addEventListener('change', ensureFontLoaded);
   fontSizeSlider.addEventListener('input', onFontSizeChange);
   downloadBtn.addEventListener('click', downloadBMP);
 
@@ -105,22 +105,57 @@ function init() {
   boldBtn.addEventListener('click', () => {
     isBold = !isBold;
     boldBtn.classList.toggle('active', isBold);
-    render();
+    ensureFontLoaded();
   });
 
   italicBtn.addEventListener('click', () => {
     isItalic = !isItalic;
     italicBtn.classList.toggle('active', isItalic);
-    render();
+    ensureFontLoaded();
   });
 
-  // Initial render
-  render();
+  // Border buttons
+  borderGroup.querySelectorAll('.align-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      borderGroup.querySelector('.active').classList.remove('active');
+      btn.classList.add('active');
+      currentBorder = btn.dataset.border;
+      render();
+    });
+  });
+
+  // Footer input
+  footerInput.addEventListener('input', render);
+
+  // Initial render (with font load)
+  ensureFontLoaded();
 }
 
 function onFontSizeChange() {
   fontSizeValue.textContent = fontSizeSlider.value + 'px';
   render();
+}
+
+// --- Ensure font is loaded before rendering ---
+function ensureFontLoaded() {
+  const fontIndex = parseInt(fontSelect.value, 10);
+  const font = FONTS[fontIndex];
+  const weight = isBold ? '700' : '400';
+  const style = isItalic ? 'italic' : 'normal';
+  // Build a font spec string for the fonts API
+  const fontSpec = `${style} ${weight} 48px ${font.family}`;
+
+  // Render immediately (with fallback font if needed)
+  render();
+
+  // Then ensure the real font is loaded and re-render
+  if (document.fonts && document.fonts.load) {
+    document.fonts.load(fontSpec).then(() => {
+      render();
+    }).catch(() => {
+      // Font load failed, fallback render already done
+    });
+  }
 }
 
 // --- Build CSS Font String ---
