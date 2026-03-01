@@ -325,6 +325,27 @@ body {
   display: block;
 }
 
+.font-picker-helper {
+  padding: 10px 14px;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+
+.font-picker-helper a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--transition);
+}
+
+.font-picker-helper a:hover {
+  text-decoration: underline;
+  color: var(--accent-hover);
+}
+
 .font-group-label {
   padding: 8px 14px 4px;
   font-size: 0.65rem;
