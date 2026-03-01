@@ -15,7 +15,6 @@ const OUTPUT_CONFIG = {
   format: 'bmp',
   padding: 40,
   lineHeightMultiplier: 1.6,
-  supersampleScale: 3,
 };
 
 // --- Featured / Curated Fonts ---
@@ -53,9 +52,9 @@ const footerInput = document.getElementById('footerInput');
 const canvas = document.getElementById('previewCanvas');
 const ctx = canvas.getContext('2d');
 
-// --- Offscreen canvas for supersampled rendering ---
-const offscreenCanvas = document.createElement('canvas');
-const offCtx = offscreenCanvas.getContext('2d');
+// --- Export canvas for raw 1x BMP rendering ---
+const exportCanvas = document.createElement('canvas');
+const exportCtx = exportCanvas.getContext('2d');
 
 // --- State ---
 let currentAlignment = 'center';
@@ -70,15 +69,19 @@ let loadedFontLinks = {};    // track loaded <link> tags to avoid duplicates
 
 // --- Initialize ---
 function init() {
-  const { width, height, supersampleScale } = OUTPUT_CONFIG;
+  const { width, height } = OUTPUT_CONFIG;
 
-  // Set output canvas dimensions
-  canvas.width = width;
-  canvas.height = height;
+  // Set visual CSS size for the preview canvas
+  canvas.style.width = '100%';
+  canvas.style.maxWidth = width + 'px';
+  // Scale actual resolution for retina displays
+  const dpr = window.devicePixelRatio || 1;
+  canvas.width = width * dpr;
+  canvas.height = height * dpr;
 
-  // Set offscreen canvas to supersampled dimensions
-  offscreenCanvas.width = width * supersampleScale;
-  offscreenCanvas.height = height * supersampleScale;
+  // Set export canvas to exact physical dimensions (480x800)
+  exportCanvas.width = width;
+  exportCanvas.height = height;
 
   // Bind events
   quoteInput.addEventListener('input', render);
@@ -453,93 +456,98 @@ function drawBorder(ctx, style, width, height, padding) {
   }
 }
 
-// --- Canvas Rendering (with supersampling) ---
+// --- Canvas Rendering (optimized for Native Clarity) ---
 function render() {
-  const { width, height, padding, lineHeightMultiplier, supersampleScale } = OUTPUT_CONFIG;
-  const S = supersampleScale;
+  const { width, height, padding, lineHeightMultiplier } = OUTPUT_CONFIG;
 
-  const hiWidth = width * S;
-  const hiHeight = height * S;
-  const hiPadding = padding * S;
+  // 1. Render exactly at 480x800 target resolution for optimum crisp font hinting
+  exportCtx.fillStyle = '#FFFFFF';
+  exportCtx.fillRect(0, 0, width, height);
+  drawBorder(exportCtx, currentBorder, width, height, padding);
 
-  // Clear offscreen to white
-  offCtx.fillStyle = '#FFFFFF';
-  offCtx.fillRect(0, 0, hiWidth, hiHeight);
-
-  // Draw border
-  drawBorder(offCtx, currentBorder, hiWidth, hiHeight, hiPadding);
-
-  // Get settings
   const fontSize = parseInt(fontSizeSlider.value, 10);
-  const hiFontSize = fontSize * S;
-  const hiLineHeight = Math.round(hiFontSize * lineHeightMultiplier);
+  const lineHeight = Math.round(fontSize * lineHeightMultiplier);
 
-  // Get text (use placeholder if empty)
   let text = quoteInput.value;
   if (!text.trim()) {
     text = 'The only thing that you absolutely have to know, is the location of the library.\n\n— Albert Einstein';
   }
 
-  // --- Footer ---
   const footerText = footerInput.value.trim();
   let footerHeight = 0;
-  const footerFontSize = Math.round(16 * S);
+  const footerFontSize = 16;
   if (footerText) {
     footerHeight = footerFontSize * 3;
   }
 
-  // Set font on offscreen context (scaled up) with bold/italic
-  offCtx.font = buildFontString(hiFontSize, currentFont.family);
-  offCtx.fillStyle = '#000000';
-  offCtx.textBaseline = 'top';
+  exportCtx.font = buildFontString(fontSize, currentFont.family);
+  exportCtx.fillStyle = '#000000';
+  exportCtx.textBaseline = 'top';
 
-  // Set alignment
-  const hiMaxWidth = hiWidth - hiPadding * 2;
+  const maxWidth = width - padding * 2;
   let xPos;
   if (currentAlignment === 'left') {
-    offCtx.textAlign = 'left';
-    xPos = hiPadding;
+    exportCtx.textAlign = 'left';
+    xPos = padding;
   } else if (currentAlignment === 'right') {
-    offCtx.textAlign = 'right';
-    xPos = hiWidth - hiPadding;
+    exportCtx.textAlign = 'right';
+    xPos = width - padding;
   } else {
-    offCtx.textAlign = 'center';
-    xPos = hiWidth / 2;
+    exportCtx.textAlign = 'center';
+    xPos = width / 2;
   }
 
-  // Wrap text
-  const lines = wrapText(offCtx, text, hiMaxWidth);
-  const totalTextHeight = lines.length * hiLineHeight;
+  // Wrap text using the 1x pixel dimensions so it matches the export
+  const lines = wrapText(exportCtx, text, maxWidth);
+  const totalTextHeight = lines.length * lineHeight;
+  const availableHeight = height - footerHeight;
+  let yStart = Math.max(padding, (availableHeight - totalTextHeight) / 2);
 
-  // Vertically center (account for footer space)
-  const availableHeight = hiHeight - footerHeight;
-  let yStart = Math.max(hiPadding, (availableHeight - totalTextHeight) / 2);
-
-  // Draw lines on offscreen canvas
   for (let i = 0; i < lines.length; i++) {
-    offCtx.fillText(lines[i], xPos, yStart + i * hiLineHeight);
+    exportCtx.fillText(lines[i], xPos, yStart + i * lineHeight);
   }
 
-  // Draw footer text
   if (footerText) {
-    offCtx.font = `normal 400 ${footerFontSize}px "Atkinson Hyperlegible", Arial, sans-serif`;
-    offCtx.textAlign = 'center';
-    offCtx.textBaseline = 'bottom';
-    offCtx.fillStyle = '#555555';
-    offCtx.fillText(footerText, hiWidth / 2, hiHeight - hiPadding * 0.6);
+    exportCtx.font = `normal 400 ${footerFontSize}px "Atkinson Hyperlegible", Arial, sans-serif`;
+    exportCtx.textAlign = 'center';
+    exportCtx.textBaseline = 'bottom';
+    exportCtx.fillStyle = '#555555';
+    exportCtx.fillText(footerText, width / 2, height - padding * 0.6);
   }
 
-  // --- Step 2: Downscale to preview canvas ---
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
-  ctx.drawImage(offscreenCanvas, 0, 0, hiWidth, hiHeight, 0, 0, width, height);
+  // 2. Render independently to the preview canvas for Retina displays
+  const dpr = window.devicePixelRatio || 1;
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.save();
+  ctx.scale(dpr, dpr);
+  drawBorder(ctx, currentBorder, width, height, padding);
+
+  ctx.font = buildFontString(fontSize, currentFont.family);
+  ctx.fillStyle = '#000000';
+  ctx.textBaseline = 'top';
+  ctx.textAlign = exportCtx.textAlign;
+
+  for (let i = 0; i < lines.length; i++) {
+    ctx.fillText(lines[i], xPos, yStart + i * lineHeight);
+  }
+
+  if (footerText) {
+    ctx.font = `normal 400 ${footerFontSize}px "Atkinson Hyperlegible", Arial, sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = '#555555';
+    ctx.fillText(footerText, width / 2, height - padding * 0.6);
+  }
+  ctx.restore();
 }
 
 // --- BMP Encoder (24-bit uncompressed, grayscale) ---
 function encodeBMP() {
   const { width, height } = OUTPUT_CONFIG;
 
-  const imageData = ctx.getImageData(0, 0, width, height);
+  const imageData = exportCtx.getImageData(0, 0, width, height);
   const pixels = imageData.data;
 
   const rowSize = Math.ceil((width * 3) / 4) * 4;
