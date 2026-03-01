@@ -605,6 +605,8 @@ body {
   height: auto;
   max-width: 100%;
   object-fit: contain;
+  /* Ensure typed OS emojis preview in grayscale just like the final BMP export */
+  filter: grayscale(100%);
 }
 
 .preview-hint {
